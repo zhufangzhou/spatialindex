@@ -126,9 +126,116 @@ public class RTree implements ISpatialIndex
 		}
 	}
 
+	// Utility function
+	private Integer[] argsort(final List<IShape> a, final boolean ascending) {
+        Integer[] indexes = new Integer[a.size()];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        Arrays.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                // return (ascending ? 1 : -1) * Float.compare(a[i1], a[i2]);
+                return (ascending ? 1 : -1) * a.get(i1).compareTo(a.get(i2));
+            }
+        });
+        return indexes;
+    }
+
 	//
 	// ISpatialIndex interface
 	//
+
+	public void bulkLoading(final List<byte[]> bData, final List<IShape> bShape, List<Integer> bId) {
+	// public void bulkLoading(final byte[][] bData, final IShape[] bShape, int[] bId) {
+		// int cIndex;	
+		// byte[] data;
+		// IShape shape;
+		// int id;
+		// for (cIndex = 0; cIndex < bData.size(); cIndex++) {
+		// 	data = bData.get(cIndex);
+		// 	shape = bShape.get(cIndex);
+		// 	id = bId.get(cIndex);
+		// 	// System.out.println(new String(data) + " | "  + shape.toString() + " | " + id);
+		// }
+		// System.out.println(bShape.get(0).compareTo(bShape.get(0)));
+
+		// the root node created before is useless
+		deleteNode(readNode(m_rootID));
+
+		Leaf cLeaf = new Leaf(this, -1);
+		List<Integer> nodeIds = new ArrayList<Integer>();
+		int nodeId;
+		boolean[] overflowTable;
+
+		// Sort all the data along x-axis
+		Integer[] indexes = argsort(bShape, true);
+		// Deal with level = 0 ---- leaf nodes
+		int nLeaf = 0;
+		// m_stats.m_nodesInLevel.set(0, new Integer(0));
+		for (int cIndex = 0; cIndex < indexes.length; cIndex++) {
+			int sIndex = indexes[cIndex];
+
+			byte[] data = bData.get(sIndex);			
+			Region mbr = bShape.get(sIndex).getMBR();
+			int id = bId.get(sIndex);
+			
+			// insert data to leaf
+			cLeaf.insertEntry(data, mbr, id);
+
+			if ((cIndex+1) % m_leafCapacity == 0 || cIndex == indexes.length-1) {
+				// Write leaf node when it meet `mleafCapacity` limit.
+				nodeId = writeNode(cLeaf);
+				nLeaf++;
+				System.out.println("Leaf: " + nodeId);
+				nodeIds.add(nodeId);
+				cLeaf = new Leaf(this, -1);
+			}
+		}
+
+		int m_level = 1;
+		Index cInternal = null;
+		Node childNode = null;
+		List<Integer> tmpNodeIds;
+
+		// Deal with level > 0 ----- index nodes
+		while (nodeIds.size() > m_indexCapacity) {
+			tmpNodeIds = new ArrayList<Integer>(nodeIds);	
+			nodeIds.clear();
+			cInternal = new Index(this, -1, m_level);
+			m_stats.m_nodesInLevel.add(new Integer(0));
+			for (int cIndex = 0; cIndex < tmpNodeIds.size(); cIndex++) {
+				childNode = readNode(tmpNodeIds.get(cIndex));	
+				cInternal.insertEntry(null, (Region) childNode.m_nodeMBR.clone(), childNode.m_identifier); 
+
+				if ((cIndex+1) % m_indexCapacity == 0 || cIndex == tmpNodeIds.size()-1) {
+					nodeId = writeNode(cInternal);
+					System.out.println("Index: " + nodeId);
+					nodeIds.add(nodeId);
+					cInternal = new Index(this, -1, m_level);
+				}
+			}
+
+			m_level++;
+		}
+
+		// Deal with root node.
+		if (nodeIds.size() == 1) {		// no need to create another root node
+			m_rootID = nodeIds.get(0);
+		} else {
+			Index root = new Index(this, -1, m_level);
+			m_stats.m_nodesInLevel.add(new Integer(0));
+			for (int cIndex = 0; cIndex < nodeIds.size(); cIndex++) {
+				childNode = readNode(nodeIds.get(cIndex));	
+				root.insertEntry(null, (Region) childNode.m_nodeMBR.clone(), childNode.m_identifier); 
+			}
+			m_rootID = writeNode(root);
+		}
+		
+		for (int cIndex = 0; cIndex < m_stats.m_nodesInLevel.size(); cIndex++) {
+			System.out.println("m_level " + cIndex + " = " + m_stats.m_nodesInLevel.get(cIndex));
+		}
+	}
 
 	public void insertData(final byte[] data, final IShape shape, int id)
 	{

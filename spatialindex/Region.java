@@ -86,6 +86,19 @@ public class Region implements IShape
 		return false;
 	}
 
+	public int compareTo(Object o) {
+		Region r = (Region) o;
+		for (int cIndex = 0; cIndex < m_pLow.length; cIndex++) {
+			if (Math.abs(m_pLow[cIndex] - r.m_pLow[cIndex]) < SpatialIndex.EPSILON) {
+				continue;
+			} else {
+				return Double.compare(m_pLow[cIndex], r.m_pLow[cIndex]);
+			}
+		}
+		return 0;
+		
+	}
+
 	//
 	// Cloneable interface
 	//
@@ -386,4 +399,6 @@ public class Region implements IShape
 
 		return s;
 	}
+
+	
 }

@@ -1,6 +1,9 @@
 all: 
 	javac -source 1.4 -classpath ../lib -g:none *.java
 
+accum:
+	javac -classpath ../lib -d ../lib -g AccumulateRTree.java
+
 debug:
 	javac -source 1.4 -classpath ../lib -g *.java
 

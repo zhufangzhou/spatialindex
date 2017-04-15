@@ -39,4 +39,5 @@ public interface IShape
 	public Region getMBR();
 	public double getArea();
 	public double getMinimumDistance(final IShape s);
+	public int compareTo(Object o);
 } // IShape

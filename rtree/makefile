@@ -28,10 +28,10 @@
 #    marioh@cs.ucr.edu
 
 all: 
-	javac -source 1.4 -classpath ../lib -d ../lib -g:none *.java
+	javac -classpath ../lib -d ../lib -g:none *.java
 
 debug:
-	javac -source 1.4 -classpath ../lib -d ../lib -g *.java
+	javac -classpath ../lib -d ../lib -g *.java
 
 clean:
 	rm -rf ../lib/spatialindex/rtree

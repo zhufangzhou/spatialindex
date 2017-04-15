@@ -64,7 +64,17 @@ public class Point implements IShape, Cloneable
 
 		return false;
 	}
-
+	public int compareTo(Object o) {
+		Point pt = (Point) o;
+		for (int cIndex = 0; cIndex < m_pCoords.length; cIndex++) {
+			if (Math.abs(m_pCoords[cIndex] - pt.m_pCoords[cIndex]) < SpatialIndex.EPSILON) {
+				continue;
+			} else {
+				return Double.compare(m_pCoords[cIndex], pt.m_pCoords[cIndex]);
+			}
+		}
+		return 0;
+	}
 	//
 	// Cloneable interface
 	//

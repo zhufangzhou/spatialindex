@@ -68,6 +68,9 @@ abstract class Node implements INode
 
 	int m_totalDataLength = 0;
 
+	protected int m_accumulate = 0;
+		// The accumulate value in the node.
+
 	//
 	// Abstract methods
 	//
@@ -531,6 +534,7 @@ abstract class Node implements INode
 
 	protected void rstarSplit(byte[] pData, Region mbr, int id, ArrayList group1, ArrayList group2)
 	{
+		// `m_sortDim` will increase by 1 every loop
 		RstarSplitEntry[] dataLow = new RstarSplitEntry[m_capacity + 1];;
 		RstarSplitEntry[] dataHigh = new RstarSplitEntry[m_capacity + 1];;
 
@@ -559,6 +563,7 @@ abstract class Node implements INode
 		// chooseSplitAxis.
 		for (cDim = 0; cDim < m_pTree.m_dimension; cDim++)
 		{
+			// 
 			Arrays.sort(dataLow, new RstarSplitEntryComparatorLow());
 			Arrays.sort(dataHigh, new RstarSplitEntryComparatorHigh());
 
