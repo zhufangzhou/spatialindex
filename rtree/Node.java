@@ -79,6 +79,10 @@ abstract class Node implements INode
 	protected abstract Leaf findLeaf(Region mbr, int id, Stack pathBuffer);
 	protected abstract Node[] split(byte[] pData, Region mbr, int id);
 
+	// Add by ZhuFangzhou
+	// return all the leaf data of this node
+	protected abstract List<byte[]> findLeafData();
+
 	//
 	// IEntry interface
 	//
@@ -91,6 +95,10 @@ abstract class Node implements INode
 	public IShape getShape()
 	{
 		return (IShape) m_nodeMBR.clone();
+	}
+
+	public void setAccumulate(int accum) {
+		m_accumulate = accum;
 	}
 
 	//

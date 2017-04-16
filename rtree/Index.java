@@ -40,6 +40,16 @@ public class Index extends Node
 		super(pTree, id, level, pTree.m_indexCapacity);
 	}
 
+	protected List<byte[]> findLeafData() {
+		List<byte[]> leafData = new ArrayList<byte[]>();
+		for (int cIndex = 0; cIndex < m_children; cIndex++) {
+			int cId = m_pIdentifier[cIndex];
+			Node tmpNode = m_pTree.readNode(cId);
+			leafData.addAll(tmpNode.findLeafData());
+		}
+		return leafData;
+	}
+
 	protected Node chooseSubtree(Region mbr, int level, Stack pathBuffer)
 	{
 		if (m_level == level) return this;

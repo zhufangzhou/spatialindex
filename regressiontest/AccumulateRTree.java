@@ -1,3 +1,4 @@
+package spatialindex.transition;
 
 import java.io.*;
 import java.util.*;
@@ -11,7 +12,10 @@ public class AccumulateRTree {
         new AccumulateRTree(args);
     }
 
-    AccumulateRTree(String[] args) {
+    public AccumulateRTree() {
+        System.out.println("Calling AccumulateRTree() Successful!");
+    }
+    public AccumulateRTree(String[] args) {
         try {
             if (args.length != 1) {
                 System.err.println("Usage: AccumulateRTree input_file");
@@ -86,8 +90,31 @@ public class AccumulateRTree {
             // System.out.println(tree.toString());
             tree.flush();
 
+
+            // Query
+            System.out.println("\nBegin Querying ...");
+            MyVisitor vis = new MyVisitor();
+			double[] f1 = new double[3];
+            f1[0] = 1;
+            f1[1] = 1;
+            f1[2] = 1;
+            Point p = new Point(f1);
+            tree.nearestNeighborQuery(5, p, vis);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    class MyVisitor implements IVisitor
+	{
+		public void visitNode(final INode n) {}
+
+		public void visitData(final IData d)
+		{
+			// System.out.println(d.getIdentifier());
+            System.out.println(d.getIdentifier() + " : " + d.getShape() + " --- " + new String(d.getData()));
+				// the ID of this data entry is an answer to the query. I will just print it to stdout.
+		}
+	}
 }

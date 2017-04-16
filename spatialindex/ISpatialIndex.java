@@ -31,12 +31,13 @@ package spatialindex.spatialindex;
 
 import spatialindex.storagemanager.PropertySet;
 import java.util.*;
+import java.lang.reflect.Method;
 
 public interface ISpatialIndex
 {
 	public void flush() throws IllegalStateException;
 	// public void bulkLoading(final byte[][] bData, final IShape[] bShape, int[] bId);
-	public void bulkLoading(final List<byte[]> bData, final List<IShape> bShape, List<Integer> bId);
+	public void bulkLoading(final List<byte[]> bData, final List<IShape> bShape, List<Integer> bId, Method accumFunc);
 	public void insertData(final byte[] data, final IShape shape, int id);
 	public boolean deleteData(final IShape shape, int id);
 	public void containmentQuery(final IShape query, final IVisitor v);

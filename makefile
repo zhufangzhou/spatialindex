@@ -48,6 +48,9 @@ clean:
 	$(MAKE) -C regressiontest clean
 	rm -rf lib/*
 
+jar:
+	jar -cvf test/transition.jar transition
+
 backup:
 	tar cjf $(BACKUP)/spatialindex.java.$(VERSION).tar.bz2 -C .. --exclude RCS spatialindex.java
 

@@ -136,4 +136,12 @@ public class Leaf extends Node
 			}
 		}
 	}
+
+	protected List<byte[]> findLeafData() {
+		List<byte[]> leafData = new ArrayList<byte[]>();
+		for (int cIndex = 0; cIndex < m_children; cIndex++) {
+			leafData.add(m_pData[cIndex]);
+		}
+		return leafData;		
+	}
 }

@@ -31,6 +31,7 @@ package spatialindex.rtree;
 
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.Method;
 
 import spatialindex.spatialindex.*;
 import spatialindex.storagemanager.*;
@@ -146,20 +147,7 @@ public class RTree implements ISpatialIndex
 	// ISpatialIndex interface
 	//
 
-	public void bulkLoading(final List<byte[]> bData, final List<IShape> bShape, List<Integer> bId) {
-	// public void bulkLoading(final byte[][] bData, final IShape[] bShape, int[] bId) {
-		// int cIndex;	
-		// byte[] data;
-		// IShape shape;
-		// int id;
-		// for (cIndex = 0; cIndex < bData.size(); cIndex++) {
-		// 	data = bData.get(cIndex);
-		// 	shape = bShape.get(cIndex);
-		// 	id = bId.get(cIndex);
-		// 	// System.out.println(new String(data) + " | "  + shape.toString() + " | " + id);
-		// }
-		// System.out.println(bShape.get(0).compareTo(bShape.get(0)));
-
+	public void bulkLoading(final List<byte[]> bData, final List<IShape> bShape, List<Integer> bId, Method accumFunc) {
 		// the root node created before is useless
 		deleteNode(readNode(m_rootID));
 
@@ -168,9 +156,9 @@ public class RTree implements ISpatialIndex
 		int nodeId;
 		boolean[] overflowTable;
 
-		// Sort all the data along x-axis
+		// 0. Sort all the data along x-axis
 		Integer[] indexes = argsort(bShape, true);
-		// Deal with level = 0 ---- leaf nodes
+		// 1. Deal with level = 0 ---- leaf nodes
 		int nLeaf = 0;
 		// m_stats.m_nodesInLevel.set(0, new Integer(0));
 		for (int cIndex = 0; cIndex < indexes.length; cIndex++) {
@@ -198,7 +186,7 @@ public class RTree implements ISpatialIndex
 		Node childNode = null;
 		List<Integer> tmpNodeIds;
 
-		// Deal with level > 0 ----- index nodes
+		// 2. Deal with level > 0 ----- index nodes
 		while (nodeIds.size() > m_indexCapacity) {
 			tmpNodeIds = new ArrayList<Integer>(nodeIds);	
 			nodeIds.clear();
@@ -219,7 +207,7 @@ public class RTree implements ISpatialIndex
 			m_level++;
 		}
 
-		// Deal with root node.
+		// 3. Deal with root node.
 		if (nodeIds.size() == 1) {		// no need to create another root node
 			m_rootID = nodeIds.get(0);
 		} else {
@@ -231,9 +219,33 @@ public class RTree implements ISpatialIndex
 			}
 			m_rootID = writeNode(root);
 		}
-		
-		for (int cIndex = 0; cIndex < m_stats.m_nodesInLevel.size(); cIndex++) {
-			System.out.println("m_level " + cIndex + " = " + m_stats.m_nodesInLevel.get(cIndex));
+
+		// 4. Calculate accumulate value (This could be very slow, need to be optimize)
+		try {
+			Queue<Integer> qNodes = new LinkedList<Integer>();
+			qNodes.offer(m_rootID);
+			Integer cId = qNodes.poll();
+			while (cId != null) {
+				Node cNode = readNode(cId);
+				List<byte[]> allLeafData = cNode.findLeafData();
+				int accumValue = (int) accumFunc.invoke(null, new Object[] {allLeafData});
+				System.out.println("Node " + cId + " : " + accumValue);
+				cNode.setAccumulate(accumValue);
+				// rewrite node to disk, overwrite previous one
+				writeNode(cNode);
+
+				// add child nodes to `qNodes`
+				if (!cNode.isLeaf()) {
+					for (int cIndex = 0; cIndex < cNode.m_children; cIndex++) {
+						qNodes.offer(cNode.m_pIdentifier[cIndex]);
+					}
+				}
+				
+				cId = qNodes.poll();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
