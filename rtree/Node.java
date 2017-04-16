@@ -139,6 +139,10 @@ abstract class Node implements INode
 		return (m_level != 0);
 	}
 
+	public int getAccumulateValue() {
+		return m_accumulate;
+	}
+
 	//
 	// Internal
 	//
@@ -860,6 +864,8 @@ abstract class Node implements INode
 
 		m_level = ds.readInt();
 		m_children = ds.readInt();
+		// add by ZhuFangzhou
+		m_accumulate = ds.readInt();
 
 		for (int cChild = 0; cChild < m_children; cChild++)
 		{
@@ -903,6 +909,8 @@ abstract class Node implements INode
 
 		ds.writeInt(m_level);
 		ds.writeInt(m_children);
+		// add by ZhuFangzhou
+		ds.writeInt(m_accumulate);
 
 		for (int cChild = 0; cChild < m_children; cChild++)
 		{

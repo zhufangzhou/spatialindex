@@ -1038,6 +1038,51 @@ public class RTree implements ISpatialIndex
 		}
 	}
 
+	public void accumRangeQuery(final IShape query, final IVisitor v, boolean isCoarseQuery) {
+		m_rwLock.read_lock();
+		try {
+			Stack st = new Stack();
+			Node root = readNode(m_rootID);
+
+			if (root.m_children > 0 && query.intersects(root.m_nodeMBR)) st.push(root);
+
+			while (! st.empty()) {
+				Node n = (Node) st.pop();
+
+				if (n.m_level == 0) { // Leaf
+					if (isCoarseQuery && query.contains(n.m_nodeMBR)) {
+						v.visitNode((INode) n);
+					} else {
+						for (int cChild = 0; cChild < n.m_children; cChild++) {
+							if (query.intersects(n.m_pMBR[cChild])) {
+								Data data = new Data(n.m_pData[cChild], n.m_pMBR[cChild], n.m_pIdentifier[cChild]);
+								v.visitData(data);
+							}
+						}
+
+					}
+
+				} else { // Index
+					if (isCoarseQuery && query.contains(n.m_nodeMBR)) {
+						v.visitNode(n);
+						continue;
+					}
+				
+					for (int cChild = 0; cChild < n.m_children; cChild++) {
+						if (query.intersects(n.m_pMBR[cChild])) {
+							st.push(readNode(n.m_pIdentifier[cChild]));
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			// unlock read lock
+			m_rwLock.read_unlock();
+		}
+	}
+
 	private void rangeQuery(int type, final IShape query, final IVisitor v)
 	{
 		m_rwLock.read_lock();

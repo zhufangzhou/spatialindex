@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 
 import spatialindex.spatialindex.*;
 import spatialindex.storagemanager.*;
+import spatialindex.transition.AccumulateRTree;
 import spatialindex.rtree.*;
 
 public class TransitionMatrix {
@@ -13,6 +14,8 @@ public class TransitionMatrix {
     int m_indexCapacity = 3;
     int m_leafCapacity = 3;
     int m_dimension = 2;
+
+	RTree m_pTree = null;
 
     public static <T> byte[] objectToByteArray(T obj) {
         byte[] b = null;
@@ -69,7 +72,7 @@ public class TransitionMatrix {
             ps2.setProperty("LeafCapacity", new Integer(m_leafCapacity));
             ps2.setProperty("Dimension", new Integer(m_dimension));
 
-            ISpatialIndex tree = new RTree(ps2, file);
+            RTree tree = new RTree(ps2, file);
 
             String line = lr.readLine();
             int id = 0;
@@ -108,9 +111,26 @@ public class TransitionMatrix {
             tree.bulkLoading(dataList, rList, idList, TransitionMatrix.class.getMethod("accumulateData",
                     new Class<?>[] { new ArrayList<byte[]>().getClass() }));
             tree.flush();
+
+            m_pTree = tree;
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void testQuery(double[] pLow, double[] pHigh) {
+        // Test range query
+        // MyVistor vis = new MyVistor();
+        AccumVisitor vis = new AccumVisitor();
+        if (pLow.length != m_dimension && pHigh.length != m_dimension) {
+            System.err.println("pLow and pHigh has wrong dimension");
+        } else {
+            Region r = new Region(pLow, pHigh);
+            m_pTree.accumRangeQuery(r, vis, false);
+            System.out.println("total trajectory: " + vis.getAccumulateValue());
+        }
+
     }
 
     public static int accumulateData(ArrayList<byte[]> leafData) {
@@ -121,4 +141,42 @@ public class TransitionMatrix {
         }
         return trajIdSet.size();
     }
+
+
+    class MyVistor implements IVisitor {
+        public void visitNode(final INode n) {
+
+        }
+
+        public void visitData(final IData d) {
+            byte[] b = d.getData(); 
+            HashSet<Integer> tmpSet = TransitionMatrix.byteArrayToObject(b, new HashSet<Integer>().getClass());
+            System.out.println(d.getIdentifier() + " : " + d.getShape() + " --- " + tmpSet.toString());
+        }
+    }
+
+    class AccumVisitor implements IVisitor {
+        int m_accum;
+        Set<Integer> accumSet;
+        public AccumVisitor() {
+            m_accum = 0;
+            accumSet = new HashSet<Integer>();
+        }
+        public void visitNode(final INode n) {
+            System.out.println("visitNode: " + n.getShape() + " " + n.getIdentifier() + " " + n.getAccumulateValue());
+            m_accum += n.getAccumulateValue();
+        }
+
+        public void visitData(final IData d) {
+            System.out.println("visitData: " + d.getShape() + " " + d.getIdentifier());
+            byte[] b = d.getData(); 
+            HashSet<Integer> tmpSet = TransitionMatrix.byteArrayToObject(b, new HashSet<Integer>().getClass());
+            accumSet.addAll(tmpSet);
+        }
+
+        public int getAccumulateValue() {
+            return accumSet.size() + m_accum;
+        }
+    }
+
 }

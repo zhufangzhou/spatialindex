@@ -37,4 +37,6 @@ public interface INode extends IEntry
 	public int getLevel();
 	public boolean isIndex();
 	public boolean isLeaf();
+
+	public int getAccumulateValue();
 } // INode
